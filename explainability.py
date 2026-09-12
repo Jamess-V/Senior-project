@@ -170,17 +170,18 @@ def generate_saliency_maps(model, dataloader, device, num_samples=50):
 
      
 
-    saliency_results = [] 
+    saliency_results = []
+    processed_samples = 0
 
      
 
     model.eval() 
 
-    with torch.no_grad(): 
+    with torch.enable_grad():
 
         for i, (images, labels) in enumerate(dataloader): 
 
-            if i >= num_samples: 
+            if processed_samples >= num_samples:
 
                 break 
 
@@ -192,7 +193,9 @@ def generate_saliency_maps(model, dataloader, device, num_samples=50):
 
              
 
-            for j in range(images.size(0)): 
+            for j in range(images.size(0)):
+                if processed_samples >= num_samples:
+                    break
 
                 image = images[j] 
 
@@ -202,7 +205,7 @@ def generate_saliency_maps(model, dataloader, device, num_samples=50):
 
                 # Forward pass to get prediction 
 
-                output = model(image.unsqueeze(0)).squeeze() 
+                output = model(image.unsqueeze(0)).flatten()[0]
 
                 prediction = torch.sigmoid(output).item() 
 
@@ -258,7 +261,8 @@ def generate_saliency_maps(model, dataloader, device, num_samples=50):
 
                     'iou': iou 
 
-                }) 
+                })
+                processed_samples += 1
 
      
 

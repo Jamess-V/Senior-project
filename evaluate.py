@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns 
 import json 
 import os 
-from detector import MisleadingOutputDetector
 
 def precision_at_k(scores, true_labels, k_values): 
     """Calculate Precision@K for multiple K values.""" 
@@ -45,19 +44,12 @@ def compute_all_metrics(detection_results, config):
     scores = detection_results['detection_scores'] 
     ground_truth = detection_results.get('ground_truth') 
 
-    # If ground truth not provided, create proxy 
+    # Detection metrics require labels from an independent annotation source.
     if ground_truth is None: 
-        predictions = detection_results['predictions'] 
-        labels = detection_results['labels'] 
-        plausibility = detection_results['plausibility'] 
-
-        detector = MisleadingOutputDetector() 
-        ground_truth = detector.get_ground_truth( 
-            predictions, labels,  
-            correctness=(predictions > 0.5) == labels, 
-            plausibility_scores=plausibility
-        ) 
-        detection_results['ground_truth'] = ground_truth 
+        raise ValueError(
+            "Independent ground_truth labels are required; proxy labels would make "
+            "the detection metrics circular."
+        )
 
     # Compute metrics 
     metrics = {}

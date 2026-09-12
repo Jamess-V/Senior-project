@@ -6,6 +6,8 @@ from tqdm import tqdm
 
 def mc_dropout_inference(model, dataloader, num_samples=30, device='cpu'): 
     """Perform MC Dropout inference to estimate uncertainty.""" 
+    if num_samples < 1:
+        raise ValueError("num_samples must be at least 1")
     model.eval() 
     model.enable_mc_dropout() 
 
@@ -21,7 +23,7 @@ def mc_dropout_inference(model, dataloader, num_samples=30, device='cpu'):
             # Collect predictions for multiple dropout samples 
             sample_predictions = [] 
             for _ in range(num_samples): 
-                outputs = model(images).squeeze() 
+                outputs = model(images).flatten()
                 probs = torch.sigmoid(outputs) 
                 sample_predictions.append(probs.cpu().numpy()) 
 

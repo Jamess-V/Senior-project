@@ -113,14 +113,22 @@ def main():
     }
 
     print("\n[6/6] Computing detection metrics and plots...")
-    metrics, ground_truth = compute_all_metrics(detection_results, config)
-    plot_evaluation_results(detection_results, metrics, config)
+    ground_truth = detection_results.get("ground_truth")
+    metrics = {}
+    if ground_truth is None:
+        print(
+            "No independent misleading-output labels supplied; "
+            "skipping detection metrics."
+        )
+    else:
+        metrics, ground_truth = compute_all_metrics(detection_results, config)
+        plot_evaluation_results(detection_results, metrics, config)
 
     summary = {
         "test_accuracy": test_acc,
         "test_loss": test_loss,
         "metrics": metrics,
-        "ground_truth": ground_truth.tolist(),
+        "ground_truth": None if ground_truth is None else ground_truth.tolist(),
         "history": history,
     }
     summary_path = os.path.join(config.output_dir, "results", "pipeline_summary.json")

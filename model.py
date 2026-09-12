@@ -14,19 +14,32 @@ class MedicalAIModel(nn.Module):
         self.mc_dropout_keep_prob = mc_dropout_keep_prob          
 
         # Load pre-trained model 
-        if model_name == 'densenet121': 
-            self.backbone = models.densenet121(pretrained=pretrained) 
+        dropout_probability = 1.0 - mc_dropout_keep_prob
+        if not 0.0 < mc_dropout_keep_prob <= 1.0:
+            raise ValueError("mc_dropout_keep_prob must be in the (0, 1] range")
+
+        if model_name == 'densenet121':
+            weights = models.DenseNet121_Weights.DEFAULT if pretrained else None
+            self.backbone = models.densenet121(weights=weights)
             in_features = self.backbone.classifier.in_features 
-            self.backbone.classifier = nn.Linear(in_features, num_classes) 
-        elif model_name == 'resnet50': 
-            self.backbone = models.resnet50(pretrained=pretrained) 
+            self.backbone.classifier = nn.Sequential(
+                nn.Dropout(p=dropout_probability),
+                nn.Linear(in_features, num_classes),
+            )
+        elif model_name == 'resnet50':
+            weights = models.ResNet50_Weights.DEFAULT if pretrained else None
+            self.backbone = models.resnet50(weights=weights)
             in_features = self.backbone.fc.in_features 
-            self.backbone.fc = nn.Linear(in_features, num_classes) 
-        elif model_name == 'efficientnet_b0': 
-            self.backbone = models.efficientnet_b0(pretrained=pretrained) 
+            self.backbone.fc = nn.Sequential(
+                nn.Dropout(p=dropout_probability),
+                nn.Linear(in_features, num_classes),
+            )
+        elif model_name == 'efficientnet_b0':
+            weights = models.EfficientNet_B0_Weights.DEFAULT if pretrained else None
+            self.backbone = models.efficientnet_b0(weights=weights)
             in_features = self.backbone.classifier[1].in_features 
             self.backbone.classifier = nn.Sequential( 
-                nn.Dropout(p=0.2), 
+                nn.Dropout(p=dropout_probability),
                 nn.Linear(in_features, num_classes) 
             ) 
         else: 

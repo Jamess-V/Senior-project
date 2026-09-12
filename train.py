@@ -11,6 +11,8 @@ import json
 
 def train_epoch(model, dataloader, criterion, optimizer, device): 
     """Train for one epoch.""" 
+    if len(dataloader) == 0:
+        raise ValueError("Training dataloader is empty")
     model.train() 
     total_loss = 0 
     correct = 0 
@@ -20,7 +22,7 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
         images, labels = images.to(device), labels.to(device) 
 
         optimizer.zero_grad() 
-        outputs = model(images).squeeze() 
+        outputs = model(images).flatten()
         loss = criterion(outputs, labels) 
         loss.backward() 
         optimizer.step() 
@@ -34,6 +36,8 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
 
 def validate(model, dataloader, criterion, device): 
     """Validation loop.""" 
+    if len(dataloader) == 0:
+        raise ValueError("Validation dataloader is empty")
     model.eval() 
     total_loss = 0 
     correct = 0 
@@ -42,7 +46,7 @@ def validate(model, dataloader, criterion, device):
     with torch.no_grad(): 
         for images, labels in tqdm(dataloader, desc="Validation"): 
             images, labels = images.to(device), labels.to(device) 
-            outputs = model(images).squeeze() 
+            outputs = model(images).flatten()
             loss = criterion(outputs, labels) 
 
             total_loss += loss.item() 
@@ -59,7 +63,8 @@ def train_model(model, train_loader, val_loader, config):
     optimizer = optim.Adam(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay) 
     scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=3, factor=0.5) 
      
-    best_val_acc = 0 
+    best_val_acc = -float("inf")
+    best_state = None
     history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []} 
 
     print("Starting training...") 
@@ -85,17 +90,24 @@ def train_model(model, train_loader, val_loader, config):
         print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}") 
 
         # Save best model 
-        if val_acc > best_val_acc: 
+        if val_acc > best_val_acc:
             best_val_acc = val_acc 
+            best_state = {
+                key: value.detach().cpu().clone()
+                for key, value in model.state_dict().items()
+            }
             checkpoint_path = os.path.join(config.output_dir, "checkpoints", "best_model.pth") 
             torch.save({ 
                 'epoch': epoch, 
                 'model_state_dict': model.state_dict(), 
                 'optimizer_state_dict': optimizer.state_dict(), 
                 'val_acc': val_acc, 
-                'config': config 
+                'config': vars(config),
             }, checkpoint_path) 
             print(f"Saved best model with val_acc: {val_acc:.4f}") 
+
+    if best_state is not None:
+        model.load_state_dict(best_state)
 
     # Save training history 
     history_path = os.path.join(config.output_dir, "results", "training_history.json") 

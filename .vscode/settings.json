@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^python -c \"from torch\\.utils\\.data import DataLoader, Subset; from dataset import load_data; from model import MedicalAIModel; from explainability import generate_saliency_maps; train, val, test = load_data\\('\\./data/chestxray2017/chest_xray', random_state=42\\); model = MedicalAIModel\\(pretrained=False\\); results = generate_saliency_maps\\(model, DataLoader\\(Subset\\(test, \\[0\\]\\), batch_size=1\\), 'cpu', num_samples=1\\); assert len\\(results\\) == 1; print\\('Grad-CAM check passed:', results\\[0\\]\\['saliency'\\]\\.shape\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

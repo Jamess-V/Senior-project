@@ -143,27 +143,44 @@ def load_data(data_root, test_size=0.2, val_size=0.1, random_state=42):
         )
      
 
-    image_paths = normal_paths + pneumonia_paths 
+    image_paths = normal_paths + pneumonia_paths
 
-    labels = [0] * len(normal_paths) + [1] * len(pneumonia_paths) 
+    labels = [0] * len(normal_paths) + [1] * len(pneumonia_paths)
+    if not image_paths:
+        raise FileNotFoundError(f"No supported images found under {data_root}")
 
      
 
     # Split data 
 
-    X_temp, X_test, y_temp, y_test = train_test_split( 
+    official_train_root = os.path.abspath(os.path.join(data_root, "train"))
+    official_test_root = os.path.abspath(os.path.join(data_root, "test"))
+    official_val_root = os.path.abspath(os.path.join(data_root, "val"))
+    has_official_split = os.path.isdir(official_train_root) and os.path.isdir(official_test_root)
 
-        image_paths, labels, test_size=test_size, random_state=random_state, stratify=labels 
-
-    ) 
+    if has_official_split:
+        X_train = [path for path in image_paths if os.path.commonpath([os.path.abspath(path), official_train_root]) == official_train_root]
+        X_test = [path for path in image_paths if os.path.commonpath([os.path.abspath(path), official_test_root]) == official_test_root]
+        y_train = [1 if os.path.basename(os.path.dirname(path)) == "PNEUMONIA" else 0 for path in X_train]
+        y_test = [1 if os.path.basename(os.path.dirname(path)) == "PNEUMONIA" else 0 for path in X_test]
+        if os.path.isdir(official_val_root):
+            X_val = [path for path in image_paths if os.path.commonpath([os.path.abspath(path), official_val_root]) == official_val_root]
+            y_val = [1 if os.path.basename(os.path.dirname(path)) == "PNEUMONIA" else 0 for path in X_val]
+        else:
+            X_train, X_val, y_train, y_val = train_test_split(
+                X_train, y_train, test_size=val_size, random_state=random_state, stratify=y_train
+            )
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(
+            image_paths, labels, test_size=test_size, random_state=random_state, stratify=labels
+        )
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_train, y_train, test_size=val_size / (1 - test_size),
+            random_state=random_state, stratify=y_train
+        )
 
     print(f"Found {len(image_paths)} images")
     print(f"Found {len(labels)} labels")
-
-    X_train, X_val, y_train, y_val = train_test_split( 
-        X_temp, y_temp, test_size=val_size/(1-test_size),  
-        random_state=random_state, stratify=y_temp 
-    ) 
 
      
 

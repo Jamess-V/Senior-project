@@ -5,6 +5,7 @@ Displays images from the dataset with Grad-CAM saliency maps overlaid.
 
 import os
 import glob
+import random
 from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -234,10 +235,12 @@ class SaliencyVisualizer:
 
 
 def get_sample_images(data_root: str, n_normal: int = 2, n_pneumonia: int = 2) -> List[str]:
-    """Collect a small sample of test images from each class."""
+    """Collect a random sample of test images from each class."""
     normal_images = glob.glob(os.path.join(data_root, "test", "NORMAL", "*.jpeg"))
     pneumonia_images = glob.glob(os.path.join(data_root, "test", "PNEUMONIA", "*.jpeg"))
-    return normal_images[:n_normal] + pneumonia_images[:n_pneumonia]
+    normal_sample = random.sample(normal_images, min(n_normal, len(normal_images)))
+    pneumonia_sample = random.sample(pneumonia_images, min(n_pneumonia, len(pneumonia_images)))
+    return normal_sample + pneumonia_sample
 
 
 def main():

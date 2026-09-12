@@ -8,8 +8,9 @@ from typing import Tuple
 class Config: 
 
     # Data paths 
-    data_root = "./data/chestxray2017/chest_xray"
-    output_dir: str = "./outputs" 
+    project_root: str = os.path.dirname(os.path.abspath(__file__))
+    data_root: str = os.path.join(project_root, "data", "chestxray2017", "chest_xray")
+    output_dir: str = os.path.join(project_root, "outputs")
 
     # Image parameters 
     image_size: Tuple[int, int] = (224, 224) 
@@ -25,6 +26,8 @@ class Config:
 
     # Training parameters 
     batch_size: int = 32 
+    num_workers: int = 0
+    pin_memory: bool = False
     num_epochs: int = 10 
     learning_rate: float = 1e-4 
     weight_decay: float = 1e-5 
